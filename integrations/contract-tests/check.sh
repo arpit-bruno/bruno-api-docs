@@ -9,10 +9,14 @@
 # Every rig serves the same five mounts over the same fixture. That convention is what makes one
 # script cover the whole matrix: a cell is an invocation, not an edit.
 #
-#   /docs          environments include Local, tags exclude internal, pageTitle, gitCollectionUrl
+#   /docs          environments include Local, tags exclude internal, pageTitle, repositoryUrl
 #   /api/v2/docs   environments all minus Prod
 #   /internal/docs no options
 #   /bundled/docs  a single bundled yml
+#   /content/docs  the same document given inline as `content`
+#   /priority/docs `content` and `collectionPath` both set: content wins
+#   /url/docs      the bundled yml fetched from its public URL, this repo on GitHub at a pinned commit
+#   /url-missing/docs  a URL that answers 404
 #   /bru/docs      the same collection in Bruno's own format, same filters
 #   /broken/docs   a collection that is not there
 #   /oversize/docs a collection over the caps
@@ -125,6 +129,20 @@ check "/bundled/docs/ -> the page"              status_is 200 "$BASE/bundled/doc
 check "/bundled/docs/collection.yml -> yaml"    header_has Content-Type yaml "$BASE/bundled/docs/collection.yml"
 check "/bundled/docs/collection.yml -> ETag"    revalidates "$BASE/bundled/docs/collection.yml"
 check "/bundled/docs -> served as written"      body_has "$BASE/bundled/docs/collection.yml" 'Acme API (bundled)'
+
+describe "content: the document given inline, served as a bundled file"
+check "/content/docs/ -> the page"                status_is 200 "$BASE/content/docs/"
+check "/content/docs/collection.yml -> yaml"      header_has Content-Type yaml "$BASE/content/docs/collection.yml"
+check "/content/docs/collection.yml -> ETag"      revalidates "$BASE/content/docs/collection.yml"
+check "/content/docs -> the same bytes as the file" same_body "$BASE/content/docs/collection.yml" "$BASE/bundled/docs/collection.yml"
+check "/priority/docs -> content wins over the path" same_body "$BASE/priority/docs/collection.yml" "$BASE/bundled/docs/collection.yml"
+
+describe "url: a bundled document fetched once at start"
+check "/url/docs/ -> the page"                    status_is 200 "$BASE/url/docs/"
+check "/url/docs/collection.yml -> yaml"          header_has Content-Type yaml "$BASE/url/docs/collection.yml"
+check "/url/docs -> the same bytes as the file"   same_body "$BASE/url/docs/collection.yml" "$BASE/bundled/docs/collection.yml"
+check "/url-missing/docs/ -> 404"                 status_is 404 "$BASE/url-missing/docs/"
+check "naming the fetch"                          body_has "$BASE/url-missing/docs/" 'could not fetch'
 
 describe "a broken setup does not stop the app"
 check "the app's own route still answers"       body_has "$BASE/control" 'the app itself'

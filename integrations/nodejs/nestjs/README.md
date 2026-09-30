@@ -12,7 +12,7 @@ npm install @usebruno/api-docs-nestjs
 import { ApiDocsModule } from '@usebruno/api-docs-nestjs';
 
 @Module({
-  imports: [ApiDocsModule.forRoot({ collectionUrl: '../api-collection' })]
+  imports: [ApiDocsModule.forRoot({ collectionPath: '../api-collection' })]
 })
 export class AppModule {}
 ```
@@ -25,17 +25,21 @@ Open `http://localhost:<port>/docs/`. The path counts from `dist/main.js`, so a 
 
 ```ts
 ApiDocsModule.forRoot({
-  collectionUrl: '../api-collection',
+  collectionPath: '../api-collection',
   mountPath: '/docs',
   environments: { include: ['Local'] },
   tags: { exclude: ['internal'] },
   pageTitle: 'Acme API',
   logo: 'https://acme.dev/logo.svg',
-  gitCollectionUrl: 'https://github.com/acme/api-collection'
+  repositoryUrl: 'https://github.com/acme/api-collection'
 })
 ```
 
-`collectionUrl` is the path to a Bruno folder (`bruno.json` and `.bru` files), an OpenCollection yml folder or one bundled `.yml` file. The path is relative to your app's entry file.
+`collectionPath` is the path to a Bruno folder (`bruno.json` and `.bru` files), an OpenCollection yml folder or one bundled `.yml` file. The path is relative to your app's entry file.
+
+`url` is the public address of a bundled collection file, `https://example.com/api/opencollection.yml`, fetched once at start.
+
+`content` is the document itself as a string. When more than one source is set the first of `content`, `url`, `collectionPath` wins.
 
 `environments` and `tags` take `{ include, exclude }`, where `include` is a list of names or `'*'`. Leave `environments` out and none are published. Excluded tags drop their requests from the served collection.
 
@@ -81,4 +85,4 @@ portal(): string {
 
 Node 20 or later. NestJS 10, 11 or 12.
 
-Examples: [`examples/`](https://github.com/usebruno/bruno-api-docs/tree/main/integrations/nodejs/nestjs/examples)
+Examples: [`examples/`](https://github.com/usebruno/bruno-api-docs/tree/main/examples/integrations/nodejs/nestjs)

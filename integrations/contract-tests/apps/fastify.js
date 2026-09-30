@@ -1,5 +1,7 @@
 'use strict';
 
+const fs = require('node:fs');
+const path = require('node:path');
 const Fastify = require('fastify');
 const { apiDocs } = require('@usebruno/api-docs-fastify');
 
@@ -8,6 +10,8 @@ const PORT = Number(process.env.PORT || 5457);
 const COLLECTION = '../fixtures/api-collection';
 const BRU = '../fixtures/api-collection-bru';
 const BUNDLED = '../fixtures/bundled.yml';
+const CONTENT = fs.readFileSync(path.join(__dirname, BUNDLED), 'utf8');
+const URL_FIXTURE = 'https://raw.githubusercontent.com/usebruno/bruno-api-docs/1aa76e1ad567b6e05e03e46ee53fb6bc1a66e7d5/integrations/contract-tests/fixtures/bundled.yml';
 
 const app = Fastify({ logger: false });
 
@@ -37,26 +41,30 @@ async function main() {
 
   await app.register(apiDocs, {
     prefix: '/docs',
-    collectionUrl: COLLECTION,
+    collectionPath: COLLECTION,
     environments: { include: ['Local'] },
     tags: { exclude: ['internal'] },
     pageTitle: 'Acme API',
     logo: 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 10 10%22%3E%3Ccircle cx=%225%22 cy=%225%22 r=%225%22/%3E%3C/svg%3E',
-    gitCollectionUrl: 'https://token:secret@github.com/acme/api-collection'
+    repositoryUrl: 'https://token:secret@github.com/acme/api-collection'
   });
 
   await app.register(apiDocs, {
     prefix: '/api/v2/docs',
-    collectionUrl: COLLECTION,
+    collectionPath: COLLECTION,
     environments: { include: '*', exclude: ['Prod'] }
   });
 
-  await app.register(apiDocs, { prefix: '/internal/docs', collectionUrl: COLLECTION });
-  await app.register(apiDocs, { prefix: '/bundled/docs', collectionUrl: BUNDLED });
-  await app.register(apiDocs, { prefix: '/bru/docs', collectionUrl: BRU, environments: { include: ['Local'] }, tags: { exclude: ['internal'] } });
-  await app.register(apiDocs, { prefix: '/broken/docs', collectionUrl: './there-is-no-collection-here' });
-  await app.register(apiDocs, { prefix: '/oversize/docs', collectionUrl: '../fixtures/walk-oversize' });
-  await app.register(apiDocs, { prefix: '/misconfigured/docs', collectionUrl: COLLECTION, theme: 'dark' });
+  await app.register(apiDocs, { prefix: '/internal/docs', collectionPath: COLLECTION });
+  await app.register(apiDocs, { prefix: '/bundled/docs', collectionPath: BUNDLED });
+  await app.register(apiDocs, { prefix: '/content/docs', content: CONTENT });
+  await app.register(apiDocs, { prefix: '/priority/docs', content: CONTENT, collectionPath: COLLECTION });
+  await app.register(apiDocs, { prefix: '/url/docs', url: URL_FIXTURE });
+  await app.register(apiDocs, { prefix: '/url-missing/docs', url: URL_FIXTURE.replace('bundled.yml', 'missing.yml') });
+  await app.register(apiDocs, { prefix: '/bru/docs', collectionPath: BRU, environments: { include: ['Local'] }, tags: { exclude: ['internal'] } });
+  await app.register(apiDocs, { prefix: '/broken/docs', collectionPath: './there-is-no-collection-here' });
+  await app.register(apiDocs, { prefix: '/oversize/docs', collectionPath: '../fixtures/walk-oversize' });
+  await app.register(apiDocs, { prefix: '/misconfigured/docs', collectionPath: COLLECTION, theme: 'dark' });
 
   await app.listen({ port: PORT, host: '127.0.0.1' });
   console.log(`fastify rig on http://localhost:${PORT}`);
