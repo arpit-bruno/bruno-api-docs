@@ -37,6 +37,13 @@ test('the renderer booted, from the CDN, with our shell from our own origin', as
   expect(await page.evaluate(() => typeof window.OpenCollection), 'the entry the deployed bundle still carries').toBe('function');
 });
 
+test('the repository link reaches the page, with its credentials stripped', async ({ page }) => {
+  await page.goto('/docs/', { waitUntil: 'networkidle' });
+  const href = await page.locator('a[href^="https://fetch.usebruno.com"]').first().getAttribute('href');
+  expect(href).toContain(encodeURIComponent('https://github.com/acme/api-collection'));
+  expect(href).not.toContain('secret');
+});
+
 test('the filters hold all the way to the page', async ({ page }) => {
   await page.goto('/docs/', { waitUntil: 'networkidle' });
   const text = await page.evaluate(() => document.body.innerText);
@@ -108,11 +115,13 @@ test('a .bru collection renders, and its filters hold', async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
-test('a bundled single file renders the same way', async ({ page }) => {
-  await page.goto('/bundled/docs/', { waitUntil: 'networkidle' });
-  await expect(page).toHaveTitle('API Documentation');
-  await expect(page.getByText('Catalog', { exact: true }).first()).toBeVisible();
-});
+for (const mount of ['/bundled/docs/', '/content/docs/', '/url/docs/']) {
+  test(`${mount} a bundled document renders the same way`, async ({ page }) => {
+    await page.goto(mount, { waitUntil: 'networkidle' });
+    await expect(page).toHaveTitle('API Documentation');
+    await expect(page.getByText('Catalog', { exact: true }).first()).toBeVisible();
+  });
+}
 
 test('a broken mount explains itself in the page, and the app is still up', async ({ page, request }) => {
   const response = await page.goto('/broken/docs/', { waitUntil: 'networkidle' });

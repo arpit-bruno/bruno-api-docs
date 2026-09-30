@@ -8,13 +8,15 @@ export interface CollectionFilters {
   tags?: Filter;
 }
 
-export interface CollectionOptions extends CollectionFilters {
-  collectionUrl: string;
-}
+/** Where the collection comes from, in priority order: the first one set is used. */
+export const SOURCE_KEYS = ['content', 'url', 'collectionPath'] as const;
+export type SourceKey = typeof SOURCE_KEYS[number];
+
+export interface CollectionOptions extends CollectionFilters, Partial<Record<SourceKey, string>> {}
 
 export interface RendererOptions {
   logo?: string;
-  gitCollectionUrl?: string;
+  repositoryUrl?: string;
 }
 
 export interface ApiDocsOptions extends CollectionOptions, RendererOptions {
@@ -23,12 +25,18 @@ export interface ApiDocsOptions extends CollectionOptions, RendererOptions {
 
 export class ConfigError extends Error {}
 
-const KNOWN_OPTIONS = new Set(['collectionUrl', 'environments', 'tags', 'logo', 'gitCollectionUrl', 'pageTitle']);
+const KNOWN_OPTIONS = new Set<string>([...SOURCE_KEYS, 'environments', 'tags', 'logo', 'repositoryUrl', 'pageTitle']);
 
 export function validateOptions(options: ApiDocsOptions): void {
   const unknown = Object.keys(options).filter((key) => !KNOWN_OPTIONS.has(key));
   if (unknown.length > 0) {
     throw new ConfigError(`apiDocs: unknown option ${unknown.join(', ')}`);
+  }
+
+  for (const key of SOURCE_KEYS) {
+    if (options[key] !== undefined && typeof options[key] !== 'string') {
+      throw new ConfigError(`apiDocs: \`${key}\` takes a string`);
+    }
   }
 
   for (const name of ['environments', 'tags'] as const) {

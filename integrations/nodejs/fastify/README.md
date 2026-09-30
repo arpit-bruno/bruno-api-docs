@@ -11,7 +11,7 @@ npm install @usebruno/api-docs-fastify
 ```js
 const { apiDocs } = require('@usebruno/api-docs-fastify');
 
-app.register(apiDocs, { prefix: '/docs', collectionUrl: './api-collection' });
+app.register(apiDocs, { prefix: '/docs', collectionPath: './api-collection' });
 ```
 
 Open `http://localhost:<port>/docs/`. The plugin is encapsulated and its routes are hidden from `@fastify/swagger`.
@@ -21,16 +21,20 @@ Open `http://localhost:<port>/docs/`. The plugin is encapsulated and its routes 
 ```js
 app.register(apiDocs, {
   prefix: '/docs',
-  collectionUrl: './api-collection',
+  collectionPath: './api-collection',
   environments: { include: ['Local'] },
   tags: { exclude: ['internal'] },
   pageTitle: 'Acme API',
   logo: 'https://acme.dev/logo.svg',
-  gitCollectionUrl: 'https://github.com/acme/api-collection'
+  repositoryUrl: 'https://github.com/acme/api-collection'
 });
 ```
 
-`collectionUrl` is the path to a Bruno folder (`bruno.json` and `.bru` files), an OpenCollection yml folder or one bundled `.yml` file. The path is relative to your app's entry file.
+`collectionPath` is the path to a Bruno folder (`bruno.json` and `.bru` files), an OpenCollection yml folder or one bundled `.yml` file. The path is relative to your app's entry file.
+
+`url` is the public address of a bundled collection file, `https://example.com/api/opencollection.yml`, fetched once at start.
+
+`content` is the document itself as a string. When more than one source is set the first of `content`, `url`, `collectionPath` wins.
 
 `environments` and `tags` take `{ include, exclude }`, where `include` is a list of names or `'*'`. Leave `environments` out and none are published. Excluded tags drop their requests from the served collection.
 
@@ -45,7 +49,7 @@ app.register(async (guarded) => {
       return reply.code(401).send();
     }
   });
-  await guarded.register(apiDocs, { prefix: '/docs', collectionUrl: './api-collection' });
+  await guarded.register(apiDocs, { prefix: '/docs', collectionPath: './api-collection' });
 });
 ```
 
@@ -66,7 +70,7 @@ connect-src 'self' data: https://cdn.jsdelivr.net
 ```js
 const { apiDocs, embed } = require('@usebruno/api-docs-fastify');
 
-app.register(apiDocs, { prefix: '/docs', collectionUrl: './api-collection' });
+app.register(apiDocs, { prefix: '/docs', collectionPath: './api-collection' });
 app.get('/', async (request, reply) => reply.type('text/html').send(`<h1>Acme</h1>${embed({ base: '/docs' })}`));
 ```
 
@@ -74,4 +78,4 @@ app.get('/', async (request, reply) => reply.type('text/html').send(`<h1>Acme</h
 
 Node 20 or later. Fastify 4 or 5.
 
-Examples: [`examples/`](https://github.com/usebruno/bruno-api-docs/tree/main/integrations/nodejs/fastify/examples)
+Examples: [`examples/`](https://github.com/usebruno/bruno-api-docs/tree/main/examples/integrations/nodejs/fastify)
