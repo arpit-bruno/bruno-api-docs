@@ -5,6 +5,7 @@ import { etagOf, type HttpResponse, type Conditional } from '../http';
 import type { SkippedFile } from './walk';
 import { walkCollection, CAPS, CapError, type CollectionFormat } from './walk';
 import { applyFilters, isManifest } from './filter';
+import { RemoteError } from './remote';
 
 export type Provider = (conditional: Conditional) => HttpResponse;
 
@@ -41,15 +42,21 @@ function serveFromMemory(body: string | Buffer, contentType: string): Provider {
   };
 }
 
+export function bundledProvider(body: string | Buffer, label: string): BuiltProvider {
+  if (Buffer.byteLength(body) > CAPS.totalBytes) {
+    throw new CapError('total size cap (5MB)', label);
+  }
+  const contentType = /^\s*[[{]/.test(String(body)) ? 'application/json; charset=utf-8' : 'text/yaml; charset=utf-8';
+
+  return { serve: serveFromMemory(body, contentType), fileCount: 1, skipped: [], unknownEnvironments: [] };
+}
+
 export function fileProvider(filePath: string): BuiltProvider {
-  const size = fs.statSync(filePath).size;
-  if (size > CAPS.totalBytes) {
+  if (fs.statSync(filePath).size > CAPS.totalBytes) {
     throw new CapError('total size cap (5MB)', filePath);
   }
 
-  const body = fs.readFileSync(filePath);
-
-  return { serve: serveFromMemory(body, 'text/yaml; charset=utf-8'), fileCount: 1, skipped: [], unknownEnvironments: [] };
+  return bundledProvider(fs.readFileSync(filePath), filePath);
 }
 
 const formatOf = (rootDir: string): CollectionFormat =>
@@ -81,7 +88,7 @@ export function errorProvider(err: unknown): Provider {
   if (err instanceof CapError) {
     return () => errorResponse(413, err.message);
   }
-  if (err instanceof ManifestError) {
+  if (err instanceof ManifestError || err instanceof RemoteError) {
     return () => errorResponse(404, err.message);
   }
   if (err instanceof ConfigError) {
