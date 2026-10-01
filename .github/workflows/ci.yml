@@ -4,9 +4,6 @@ on:
   pull_request:
     branches: [main, 'release/**']
     types: [opened, synchronize, reopened, ready_for_review]
-    # Markdown feeds no job here: eslint does not lint it, nothing in src imports it,
-    # and no vite config reads it. Changesets are .md, so a changeset-only push skips CI.
-    paths-ignore: ['**/*.md', 'LICENSE', '.gitignore']
   push:
     branches: [main, 'release/**']
     paths-ignore: ['**/*.md', 'LICENSE', '.gitignore']
@@ -86,17 +83,25 @@ jobs:
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     outputs:
-      renderer: ${{ steps.filter.outputs.renderer }}
-      integrations: ${{ steps.filter.outputs.integrations }}
+      renderer: ${{ steps.renderer.outputs.renderer }}
+      integrations: ${{ steps.integrations.outputs.integrations }}
     steps:
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@0e4a8c6effa4802afeda77dc8d303f8176d7dfad # v3
-        id: filter
+        id: renderer
         with:
+          predicate-quantifier: 'every'
           filters: |
             renderer:
               - '!integrations/**'
               - '!examples/integrations/**'
+              - '!**/*.md'
+              - '!LICENSE'
+              - '!.gitignore'
+      - uses: dorny/paths-filter@0e4a8c6effa4802afeda77dc8d303f8176d7dfad # v3
+        id: integrations
+        with:
+          filters: |
             integrations:
               - 'integrations/**'
               - 'examples/integrations/**'
