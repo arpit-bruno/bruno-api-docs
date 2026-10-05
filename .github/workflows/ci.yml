@@ -98,6 +98,8 @@ jobs:
               - '!**/*.md'
               - '!LICENSE'
               - '!.gitignore'
+              - '!.github/workflows/changeset.yml'
+              - '!.github/workflows/integrations-matrix.yml'
       - uses: dorny/paths-filter@0e4a8c6effa4802afeda77dc8d303f8176d7dfad # v3
         id: integrations
         with:
