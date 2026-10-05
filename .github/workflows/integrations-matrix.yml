@@ -110,7 +110,7 @@ jobs:
           fail-on-error: false
 
       # one comment per PR, updated in place on every run
-      - if: github.event_name == 'pull_request'
+      - if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
         env:
           GH_TOKEN: ${{ github.token }}
           PR: ${{ github.event.pull_request.number }}
